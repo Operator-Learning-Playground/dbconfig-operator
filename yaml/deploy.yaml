@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydbconfig-controller
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: mydbconfig-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mydbconfig-controller
+    spec:
+      nodeName: vm-0-16-centos # 只调度到这个节点上
+      serviceAccountName: mydbconfig-sa # 配置service account
+      containers:
+        - name: mydbconfig
+          image: alpine:3.12
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: "Release"
+              value: "1"
+          workingDir: "/app"
+          command: ["./mydbconfigoperator"]
+          volumeMounts:
+            - name: app
+              mountPath: /app
+          ports:
+            - containerPort: 80
+        - name: mysqltest
+          image: mysql:5.7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123456"
+      volumes:
+        - name: app
+          hostPath:
+            path: /root/dbconfigoperator

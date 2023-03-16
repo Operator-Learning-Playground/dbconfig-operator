@@ -1,0 +1,14 @@
+apiVersion: api.practice.com/v1alpha1
+kind: DbConfig
+metadata:
+  name: mydbconfig
+spec:
+  dsn: root:123456@tcp(127.0.0.1:3306)/
+  maxIdleConn: 10
+  services:
+    - service:
+        dbname: test # db名
+        tables: test-db-table # configmap名
+    - service:
+        dbname: "aaa"
+        tables: ""
