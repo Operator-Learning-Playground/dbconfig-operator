@@ -39,7 +39,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 
 
 	// 更新db的库与表结构
-	//db := sysconfig.InitDB(sysconfig.SysConfig1.Dns)
+	db := sysconfig.InitDB(sysconfig.SysConfig1.Dsn)
 	for _, service := range sysconfig.SysConfig1.Services {
 		klog.Info(service.Service.Tables, req.Namespace)
 		tableList, err := sysconfig.GetConfigmapData(service.Service.Tables, req.Namespace)
@@ -47,7 +47,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			return reconcile.Result{}, nil
 		}
 		klog.Info(tableList)
-		//sysconfig.CreateDbAndTables(db, service.Service.Dbname, tableList)
+		sysconfig.CreateDbAndTables(db, service.Service.Dbname, tableList)
 	}
 
 	return reconcile.Result{}, nil

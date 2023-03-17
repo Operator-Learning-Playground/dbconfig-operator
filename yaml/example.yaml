@@ -10,5 +10,9 @@ spec:
         dbname: test # db名
         tables: test-db-table # configmap名
     - service:
-        dbname: "aaa"
-        tables: ""
+        dbname: test1111 # db名
+        tables: test-db-table # configmap名
+    - service:
+        dbname: mytest # db名
+        tables: test-db-table-example # configmap名
+

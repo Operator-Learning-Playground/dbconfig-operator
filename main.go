@@ -68,9 +68,6 @@ func main() {
 		}
 	}()
 
-
-
-	// 这里会阻塞，两种常驻进程可以使用这个方法
 	getError := <-errC
 	log.Println(getError.Error())
 

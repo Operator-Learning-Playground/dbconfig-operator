@@ -16,7 +16,7 @@ spec:
       nodeName: vm-0-16-centos # 只调度到这个节点上
       serviceAccountName: mydbconfig-sa # 配置service account
       containers:
-        - name: mydbconfig
+        - name: mydbconfig # 控制器镜像
           image: alpine:3.12
           imagePullPolicy: IfNotPresent
           env:
@@ -29,7 +29,7 @@ spec:
               mountPath: /app
           ports:
             - containerPort: 80
-        - name: mysqltest
+        - name: mysqltest  # 数据库镜像
           image: mysql:5.7
           imagePullPolicy: IfNotPresent
           ports:

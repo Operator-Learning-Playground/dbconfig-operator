@@ -6,18 +6,18 @@ import (
 )
 
 
-
+// InitDB 初始化db数据库
 func InitDB(dsn string) *sql.DB {
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
 
 	return db
 }
 
+// CreateDbAndTables 创建表结构
 func CreateDbAndTables(db *sql.DB, dbname string, tableInfos []string) {
 	_, err := db.Exec("CREATE DATABASE IF NOT EXISTS " + dbname)
 	if err != nil {
