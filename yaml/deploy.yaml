@@ -16,6 +16,15 @@ spec:
       nodeName: vm-0-16-centos # 只调度到这个节点上
       serviceAccountName: mydbconfig-sa # 配置service account
       containers:
+        # 容器启动顺序应该在代码层面保证
+        - name: mysqltest  # 数据库镜像
+          image: mysql:5.7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123456"
         - name: mydbconfig # 控制器镜像
           image: alpine:3.12
           imagePullPolicy: IfNotPresent
@@ -29,15 +38,21 @@ spec:
               mountPath: /app
           ports:
             - containerPort: 80
-        - name: mysqltest  # 数据库镜像
-          image: mysql:5.7
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 3306
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: "123456"
       volumes:
         - name: app
           hostPath:
             path: /root/dbconfigoperator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mydbconfig-svc
+  namespace: default
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      nodePort: 30110
+  selector:
+    app: mydbconfig-controller
+---

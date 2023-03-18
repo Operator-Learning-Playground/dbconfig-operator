@@ -7,6 +7,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// GetConfigmapData 取得用户自定义的configmap data字段
 func GetConfigmapData(name string, namespace string) ([]string, error) {
 
 	res := make([]string, 0)

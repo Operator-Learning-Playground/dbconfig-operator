@@ -3,6 +3,7 @@ package sysconfig
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"k8s.io/klog/v2"
 )
 
 
@@ -11,7 +12,7 @@ func InitDB(dsn string) *sql.DB {
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		panic(err)
+		klog.Error("open mysql error: ", err)
 	}
 
 	return db
@@ -21,20 +22,29 @@ func InitDB(dsn string) *sql.DB {
 func CreateDbAndTables(db *sql.DB, dbname string, tableInfos []string) {
 	_, err := db.Exec("CREATE DATABASE IF NOT EXISTS " + dbname)
 	if err != nil {
-		panic(err)
+		klog.Error("create databases error: ", err)
 	}
 
 	_, err = db.Exec("USE " + dbname)
 	if err != nil {
-		panic(err)
+		klog.Error("use databases error: ", err)
 	}
 
 	for _, tableInfo := range tableInfos {
 		_, err = db.Exec(tableInfo)
 		if err != nil {
-			panic(err)
+			klog.Error("database: ", dbname, ", create tables error: ", err)
 		}
 	}
 
 }
 
+// DeleteDB 删除db
+func DeleteDB(db *sql.DB, dbname string) {
+
+	_, err := db.Exec("DROP DATABASE IF EXISTS " + dbname)
+	if err != nil {
+		klog.Error("drop databases error: ", err)
+	}
+
+}
