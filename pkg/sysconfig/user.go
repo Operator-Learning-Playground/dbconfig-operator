@@ -23,3 +23,19 @@ func CreateUser(db *sql.DB, user string, password string, dbname string) {
 		klog.Error("set db privileges error: ", err)
 	}
 }
+
+// DeleteUser 删除user
+func DeleteUsers(db *sql.DB, users []string) {
+	if len(users) == 0 {
+		klog.Info("no user have to delete")
+		return
+	}
+	for _, user := range users {
+		_, err := db.Exec("DROP USER IF EXISTS " + user)
+		if err != nil {
+			klog.Error("drop user error: ", err)
+		}
+	}
+
+
+}

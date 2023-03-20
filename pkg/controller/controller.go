@@ -30,6 +30,8 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	}
 	klog.Info(dbconfig)
 
+	needToDeleteDb, needToDeleteUser := sysconfig.CompareNeedToDelete(dbconfig, sysconfig.SysConfig1)
+	klog.Info("delete db: ", needToDeleteDb, "delete user: ", needToDeleteUser)
 	// 配置文件更新
 	err = sysconfig.AppConfig(dbconfig)
 	if err != nil {
@@ -40,6 +42,10 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 
 	// 更新db的库与表结构
 	db := sysconfig.InitDB(sysconfig.SysConfig1.Dsn)
+	// db、user删除操作
+	sysconfig.DeleteDBs(db, needToDeleteDb)
+	sysconfig.DeleteUsers(db, needToDeleteUser)
+	// 创建操作
 	for _, service := range sysconfig.SysConfig1.Services {
 		// 没设置就跳过
 		if service.Service.Tables == "" || service.Service.Dbname == "" {
@@ -68,6 +74,8 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		klog.Info("password: ", password)
 		sysconfig.CreateUser(db, service.Service.User, password, service.Service.Dbname)
 	}
+
+
 
 	return reconcile.Result{}, nil
 }

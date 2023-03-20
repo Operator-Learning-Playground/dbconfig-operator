@@ -40,11 +40,18 @@ func CreateDbAndTables(db *sql.DB, dbname string, tableInfos []string) {
 }
 
 // DeleteDB 删除db
-func DeleteDB(db *sql.DB, dbname string) {
+func DeleteDBs(db *sql.DB, dbnames []string) {
 
-	_, err := db.Exec("DROP DATABASE IF EXISTS " + dbname)
-	if err != nil {
-		klog.Error("drop databases error: ", err)
+	if len(dbnames) == 0 {
+		klog.Info("no db have to delete")
+		return
 	}
+	for _, dbname := range dbnames {
+		_, err := db.Exec("DROP DATABASE IF EXISTS " + dbname)
+		if err != nil {
+			klog.Error("drop databases error: ", err)
+		}
+	}
+
 
 }

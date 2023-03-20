@@ -53,6 +53,8 @@ type Services struct {
 // AppConfig 刷新配置文件
 func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 
+	// 比较目前db有的 user 与dbname
+
 	if len(SysConfig1.Services) != len(dbconfig.Spec.Services) {
 		// 清零后需要先更新app.yaml文件
 		SysConfig1.Services = make([]Services, len(dbconfig.Spec.Services))
@@ -106,4 +108,42 @@ func saveConfigToFile() error {
 	}
 
 	return nil
+}
+
+// CompareNeedToDelete 比较原本的config与新增的资源对象config，如果在新的资源中没有找到，代码需要删除此表与用户
+func CompareNeedToDelete(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConfig) ([]string, []string) {
+	needDeleteDb := make([]string, 0)
+	needDeleteUser := make([]string, 0)
+
+	for _, v := range sysconfig.Services {
+		isDb := searchDbNotInList(v.Service.Dbname, dbconfig.Spec.Services)
+		isUser := searchUserNotInList(v.Service.User, dbconfig.Spec.Services)
+		if isDb {
+			needDeleteDb = append(needDeleteDb, v.Service.Dbname)
+		}
+		if isUser {
+			needDeleteUser = append(needDeleteUser, v.Service.User)
+		}
+	}
+
+	return needDeleteDb, needDeleteUser
+
+}
+
+func searchDbNotInList(target string, services []dbconfigv1alpha1.Services) bool {
+	for _, v := range services {
+		if v.Service.Dbname == target {
+			return false
+		}
+	}
+	return true
+}
+
+func searchUserNotInList(target string, services []dbconfigv1alpha1.Services) bool {
+	for _, v := range services {
+		if v.Service.User == target {
+			return false
+		}
+	}
+	return true
 }
