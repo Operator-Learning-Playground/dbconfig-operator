@@ -37,8 +37,10 @@ type SysConfig struct {
 }
 
 type Service struct {
-	Dbname  string `yaml:"dbname"`
-	Tables  string `yaml:"tables"`
+	Dbname   string   `yaml:"dbname"`
+	Tables   string   `yaml:"tables"`
+	User     string	  `yaml:"user"`
+	Password string   `yaml:"password"`
 }
 
 type Services struct {
@@ -65,7 +67,8 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 	for i, service := range dbconfig.Spec.Services {
 		SysConfig1.Services[i].Service.Dbname = service.Service.Dbname
 		SysConfig1.Services[i].Service.Tables = service.Service.Tables
-
+		SysConfig1.Services[i].Service.User = service.Service.User
+		SysConfig1.Services[i].Service.Password = service.Service.Password
 	}
 
 	// 保存配置文件

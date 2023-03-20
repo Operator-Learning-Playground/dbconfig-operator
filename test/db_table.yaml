@@ -4,7 +4,7 @@ metadata:
   name: test-db-table
   namespace: default
 data:
-  game.properties: |
+  runoob.table: |
     CREATE TABLE IF NOT EXISTS runoob_tbl(
     runoob_id INT UNSIGNED AUTO_INCREMENT,
     runoob_title VARCHAR(100) NOT NULL,
@@ -12,7 +12,7 @@ data:
     submission_date DATE,
     PRIMARY KEY ( runoob_id )
     )ENGINE=InnoDB DEFAULT CHARSET=utf8;
-  ui.properties: |
+  test.table: |
     CREATE TABLE IF NOT EXISTS runoob_tbl1(
     runoob_id INT UNSIGNED AUTO_INCREMENT,
     runoob_title VARCHAR(100) NOT NULL,

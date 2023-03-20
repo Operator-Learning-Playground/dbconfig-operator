@@ -41,6 +41,12 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	// 更新db的库与表结构
 	db := sysconfig.InitDB(sysconfig.SysConfig1.Dsn)
 	for _, service := range sysconfig.SysConfig1.Services {
+		// 没设置就跳过
+		if service.Service.Tables == "" || service.Service.Dbname == "" {
+			klog.Warning("this loop no dbname or tables.")
+			continue
+		}
+		// 1. 创建表
 		klog.Info(service.Service.Tables, req.Namespace)
 		tableList, err := sysconfig.GetConfigmapData(service.Service.Tables, req.Namespace)
 		if err != nil {
@@ -48,6 +54,19 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		}
 		klog.Info(tableList)
 		sysconfig.CreateDbAndTables(db, service.Service.Dbname, tableList)
+
+		// 没设置就跳过
+		if service.Service.User == "" || service.Service.Password == "" {
+			klog.Warning("this loop no user or password.")
+			continue
+		}
+		// 2. 创建用户
+		password, err := sysconfig.GetSecretData(service.Service.Password, req.Namespace)
+		if err != nil {
+			return reconcile.Result{}, nil
+		}
+		klog.Info("password: ", password)
+		sysconfig.CreateUser(db, service.Service.User, password, service.Service.Dbname)
 	}
 
 	return reconcile.Result{}, nil

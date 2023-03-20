@@ -44,8 +44,6 @@ func main() {
 		os.Exit(1)
 	}
 
-
-
 	// 3. 控制器相关
 	dbConfigCtl := controller.NewDbConfigController()
 

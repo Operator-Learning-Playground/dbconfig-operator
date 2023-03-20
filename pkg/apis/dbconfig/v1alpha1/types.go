@@ -29,8 +29,10 @@ type Services struct {
 }
 
 type Service struct {
-	Dbname  string 	 `json:"dbname"`
-	Tables  string   `json:"tables"`
+	Dbname   string   `json:"dbname"`
+	Tables   string   `json:"tables"`
+	User     string	  `json:"user"`	
+	Password string   `json:"password"`  
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

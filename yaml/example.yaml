@@ -7,12 +7,18 @@ spec:
   maxIdleConn: 10
   services:
     - service:
-        dbname: test # db名
-        tables: test-db-table # configmap名
+        user: testuser             # 用户名
+        password: test-db-password # secret 名，用于db用户的密码，用户需要先创建secret资源，并在此指定
+        dbname: test               # db名
+        tables: test-db-table      # configmap名，用于创建表，用户需要先创建configmap资源，并在此指定
     - service:
-        dbname: test1111 # db名
-        tables: test-db-table # configmap名
+        user: testuser1111
+        password: test-db-password
+        dbname: test1111
+        tables: test-db-table
     - service:
-        dbname: mytest # db名
-        tables: test-db-table-example # configmap名
+        user: myuser
+        password: test-db-password
+        dbname: mytest
+        tables: test-db-table-example
 
