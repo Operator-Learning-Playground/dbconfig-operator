@@ -33,13 +33,11 @@ func main() {
 		panic(err)
 	}
 
-
 	for k, v := range sr.Data {
 		fmt.Println("key: ", k)
 		fmt.Println("value: ", string(v))
 
 		sysconfig.CreateUser(db, "test", string(v), "testdb11")
 	}
-
 
 }

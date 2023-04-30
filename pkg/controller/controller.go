@@ -9,11 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-
-
 type DbConfigController struct {
 	client.Client
-
 }
 
 func NewDbConfigController() *DbConfigController {
@@ -37,8 +34,6 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	if err != nil {
 		return reconcile.Result{}, nil
 	}
-
-
 
 	// 更新db的库与表结构
 	db := sysconfig.InitDB(sysconfig.SysConfig1.Dsn)
@@ -75,16 +70,13 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		sysconfig.CreateUser(db, service.Service.User, password, service.Service.Dbname)
 	}
 
-
-
 	return reconcile.Result{}, nil
 }
 
 // InjectClient 使用controller-runtime 需要注入的client
-func(r *DbConfigController) InjectClient(c client.Client) error {
+func (r *DbConfigController) InjectClient(c client.Client) error {
 	r.Client = c
 	return nil
 }
 
 // TODO: 删除逻辑并未处理
-

@@ -8,8 +8,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-
-
 var SysConfig1 = new(SysConfig)
 
 func InitConfig() error {
@@ -19,36 +17,31 @@ func InitConfig() error {
 		return err
 	}
 
-
 	err = yaml.Unmarshal(config, SysConfig1)
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 
 }
 
 type SysConfig struct {
-	Dsn    		string  `yaml:"dsn"`
-	MaxIdleConn int  	`yaml:"maxIdleConn"`
+	Dsn         string     `yaml:"dsn"`
+	MaxIdleConn int        `yaml:"maxIdleConn"`
 	Services    []Services `yaml:"services"`
 }
 
 type Service struct {
-	Dbname   string   `yaml:"dbname"`
-	Tables   string   `yaml:"tables"`
-	User     string	  `yaml:"user"`
-	Password string   `yaml:"password"`
+	Dbname   string `yaml:"dbname"`
+	Tables   string `yaml:"tables"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 }
 
 type Services struct {
-	Service Service   `yaml:"service"`
+	Service Service `yaml:"service"`
 }
-
-
-
 
 // AppConfig 刷新配置文件
 func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {

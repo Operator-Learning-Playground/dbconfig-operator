@@ -6,12 +6,11 @@ import (
 	"log"
 )
 
-// 返回初始化k8s-client
+// InitClient 初始化client
 func InitClient(config *rest.Config) kubernetes.Interface {
 	c, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	return c
 }

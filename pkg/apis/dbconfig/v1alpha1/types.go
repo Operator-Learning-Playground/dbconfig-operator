@@ -16,23 +16,21 @@ type DbConfig struct {
 	Spec DbConfigSpec `json:"spec,omitempty"`
 }
 
-
-
 type DbConfigSpec struct {
-	Dsn    		string     `json:"dsn"`
-	MaxIdleConn int  	   `json:"maxIdleConn"`
-	Services    []Services  `json:"services"`
+	Dsn         string     `json:"dsn"`
+	MaxIdleConn int        `json:"maxIdleConn"`
+	Services    []Services `json:"services"`
 }
 
 type Services struct {
-	Service Service   `json:"service"`
+	Service Service `json:"service"`
 }
 
 type Service struct {
-	Dbname   string   `json:"dbname"`
-	Tables   string   `json:"tables"`
-	User     string	  `json:"user"`	
-	Password string   `json:"password"`  
+	Dbname   string `json:"dbname"`
+	Tables   string `json:"tables"`
+	User     string `json:"user"`
+	Password string `json:"password"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -45,5 +43,3 @@ type DbConfigList struct {
 
 	Items []DbConfig `json:"items"`
 }
-
-

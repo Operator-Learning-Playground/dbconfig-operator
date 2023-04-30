@@ -14,7 +14,6 @@ func main() {
 	client := k8sconfig.InitClient(k8sconfig.K8sRestConfig())
 	cm, _ := client.CoreV1().ConfigMaps("default").Get(context.Background(), "test-db-table", v1.GetOptions{})
 
-
 	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/")
 	if err != nil {
 		panic(err)
@@ -39,6 +38,5 @@ func main() {
 			panic(err)
 		}
 	}
-
 
 }

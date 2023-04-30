@@ -6,7 +6,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-
 // InitDB 初始化db数据库
 func InitDB(dsn string) *sql.DB {
 
@@ -52,6 +51,5 @@ func DeleteDBs(db *sql.DB, dbnames []string) {
 			klog.Error("drop databases error: ", err)
 		}
 	}
-
 
 }

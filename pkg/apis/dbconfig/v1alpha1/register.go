@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	MessageGroup = "api.practice.com"
+	MessageGroup   = "api.practice.com"
 	MessageVersion = "v1alpha1"
 )
+
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: MessageGroup, Version: MessageVersion}
 
