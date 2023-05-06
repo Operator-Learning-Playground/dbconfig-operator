@@ -21,4 +21,5 @@ spec:
         password: test-db-password
         dbname: mytest
         tables: test-db-table-example
+        rebuild: true               # 是否重新建立
 

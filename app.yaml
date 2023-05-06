@@ -1,8 +1,9 @@
 Dsn: root:123456@tcp(127.0.0.1:3306)/
 MaxIdleConn: 10
 Services:
-    - Service:
-        Dbname: test
-        Password: test-db-password
-        Tables: test-db-table
-        User: testuser
+- Service:
+    Dbname: test
+    Password: test-db-password
+    Tables: test-db-table
+    User: testuser
+    rebuild: false

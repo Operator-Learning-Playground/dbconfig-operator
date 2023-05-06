@@ -31,6 +31,7 @@ type Service struct {
 	Tables   string `json:"tables"`
 	User     string `json:"user"`
 	Password string `json:"password"`
+	ReBuild  bool   `json:"rebuild", default:"false"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

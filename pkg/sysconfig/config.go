@@ -37,6 +37,7 @@ type Service struct {
 	Tables   string `yaml:"tables"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+	ReBuild  bool   `json:"rebuild"`
 }
 
 type Services struct {
@@ -64,6 +65,7 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 		SysConfig1.Services[i].Service.Tables = service.Service.Tables
 		SysConfig1.Services[i].Service.User = service.Service.User
 		SysConfig1.Services[i].Service.Password = service.Service.Password
+		SysConfig1.Services[i].Service.ReBuild = service.Service.ReBuild
 	}
 
 	// 保存配置文件
