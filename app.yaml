@@ -7,3 +7,15 @@ Services:
     Tables: test-db-table
     User: testuser
     rebuild: false
+- Service:
+    Dbname: test1111
+    Password: test-db-password
+    Tables: test-db-table
+    User: testuser1111
+    rebuild: false
+- Service:
+    Dbname: mytest
+    Password: test-db-password
+    Tables: test-db-table-example
+    User: myuser
+    rebuild: true
