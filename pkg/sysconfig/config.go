@@ -10,25 +10,10 @@ import (
 
 var SysConfig1 = new(SysConfig)
 
-func InitConfig() error {
-	// 读取yaml配置
-	config, err := ioutil.ReadFile("./app.yaml")
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(config, SysConfig1)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
 type SysConfig struct {
 	Dsn         string     `yaml:"dsn"`
 	MaxIdleConn int        `yaml:"maxIdleConn"`
+	MaxOpenConn int        `yaml:"maxOpenConn"`
 	Services    []Services `yaml:"services"`
 }
 
@@ -47,10 +32,11 @@ type Services struct {
 // AppConfig 刷新配置文件
 func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 
-	// 比较目前db有的 user 与dbname
+	// 比较当前db有的 user 与 dbname
 
+	// 如果数量不同，直接全部重新赋值
 	if len(SysConfig1.Services) != len(dbconfig.Spec.Services) {
-		// 清零后需要先更新app.yaml文件
+		// 清零后需要先更新 app.yaml 文件
 		SysConfig1.Services = make([]Services, len(dbconfig.Spec.Services))
 		if err := saveConfigToFile(); err != nil {
 			return err
@@ -60,6 +46,7 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 	// 2. 更新内存的配置
 	SysConfig1.Dsn = dbconfig.Spec.Dsn
 	SysConfig1.MaxIdleConn = dbconfig.Spec.MaxIdleConn
+	SysConfig1.MaxOpenConn = dbconfig.Spec.MaxOpenConn
 	for i, service := range dbconfig.Spec.Services {
 		SysConfig1.Services[i].Service.Dbname = service.Service.Dbname
 		SysConfig1.Services[i].Service.Tables = service.Service.Tables
@@ -81,7 +68,21 @@ func ReloadConfig() error {
 	return InitConfig()
 }
 
-//saveConfigToFile 把config配置放入文件中
+func InitConfig() error {
+	// 读取 yaml 配置
+	config, err := ioutil.ReadFile("./app.yaml")
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(config, SysConfig1)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// saveConfigToFile 把 config 配置放入文件中
 func saveConfigToFile() error {
 
 	b, err := yaml.Marshal(SysConfig1)
@@ -110,6 +111,7 @@ func CompareNeedToDelete(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConf
 	needDeleteDb := make([]string, 0)
 	needDeleteUser := make([]string, 0)
 
+	// 挑出需要删除的资源
 	for _, v := range sysconfig.Services {
 		isDb := searchDbNotInList(v.Service.Dbname, dbconfig.Spec.Services)
 		isUser := searchUserNotInList(v.Service.User, dbconfig.Spec.Services)
@@ -125,6 +127,8 @@ func CompareNeedToDelete(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConf
 
 }
 
+// searchDbNotInList 比较 dbconfig 中是否有此 dbname，
+// 如果没有代表需要在 app.yaml 中挑出来，准备删除的 dbname
 func searchDbNotInList(target string, services []dbconfigv1alpha1.Services) bool {
 	for _, v := range services {
 		if v.Service.Dbname == target {

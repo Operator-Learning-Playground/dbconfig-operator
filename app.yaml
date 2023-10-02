@@ -1,21 +1,22 @@
-Dsn: root:123456@tcp(127.0.0.1:3306)/
-MaxIdleConn: 10
+Dsn: root:1234567@tcp(127.0.0.1:3306)/
+MaxIdleConn: 11
+MaxOpenConn: 51
 Services:
 - Service:
-    Dbname: test
-    Password: test-db-password
-    Tables: test-db-table
-    User: testuser
-    rebuild: false
-- Service:
-    Dbname: test1111
-    Password: test-db-password
-    Tables: test-db-table
-    User: testuser1111
-    rebuild: false
-- Service:
-    Dbname: mytest
-    Password: test-db-password
-    Tables: test-db-table-example
-    User: myuser
+    Dbname: dbconfig_service1
+    Password: dbconfig-service1-secret
+    Tables: dbconfig-service1-configmap
+    User: dbconfig_service1
     rebuild: true
+- Service:
+    Dbname: dbconfig_service2
+    Password: dbconfig-service2-secret
+    Tables: dbconfig-service2-configmap
+    User: dbconfig_service2
+    rebuild: true
+- Service:
+    Dbname: dbconfig_service3
+    Password: dbconfig-service3-secret
+    Tables: dbconfig-service3-configmap
+    User: dbconfig_service3
+    rebuild: false

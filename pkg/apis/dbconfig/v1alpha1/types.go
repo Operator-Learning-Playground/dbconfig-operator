@@ -18,7 +18,8 @@ type DbConfig struct {
 
 type DbConfigSpec struct {
 	Dsn         string     `json:"dsn"`
-	MaxIdleConn int        `json:"maxIdleConn"`
+	MaxIdleConn int        `json:"maxIdleConn" default:"10"`
+	MaxOpenConn int        `json:"maxOpenConn" default:"100"`
 	Services    []Services `json:"services"`
 }
 
@@ -28,10 +29,10 @@ type Services struct {
 
 type Service struct {
 	Dbname   string `json:"dbname"`
-	Tables   string `json:"tables"`
 	User     string `json:"user"`
-	Password string `json:"password"`
-	ReBuild  bool   `json:"rebuild", default:"false"`
+	Tables   string `json:"tables_configmap"`
+	Password string `json:"password_secret"`
+	ReBuild  bool   `json:"rebuild" default:"false"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

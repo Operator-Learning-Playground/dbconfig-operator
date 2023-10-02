@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbconfig-service3-configmap
+  namespace: default
+data:
+  # 下面填写创建 mysql 表的 sql 语句
+  users.table: |
+    CREATE TABLE IF NOT EXISTS users (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      username VARCHAR(50) NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      email VARCHAR(100) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbconfig-service3-secret
+data:
+  # 在创建 secret 对象时，data 字段需要用 "base64" 编码
+  # 这是base64后的结果，k8s会自动从base64转回来
+  # 所以连接数据库时，只需要填写原密码就行。
+  PASSWORD: "ZGJjb25maWctc2VydmljZTMtc2VjcmV0" # 原密码: dbconfig-service3-secret

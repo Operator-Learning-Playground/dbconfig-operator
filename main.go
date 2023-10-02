@@ -30,7 +30,7 @@ func main() {
 	var d time.Duration = 0
 	// 1. 管理器初始化
 	mgr, err := manager.New(k8sconfig.K8sRestConfig(), manager.Options{
-		Logger: logf.Log.WithName("dbconfig-operator"),
+		Logger:     logf.Log.WithName("dbconfig-operator"),
 		SyncPeriod: &d, // resync不设置触发
 	})
 	if err != nil {
@@ -48,9 +48,9 @@ func main() {
 	// 3. 控制器相关
 	dbConfigCtl := controller.NewDbConfigController()
 
-	err = builder.ControllerManagedBy(mgr).
-		For(&dbconfigv1alpha1.DbConfig{}).
-		Complete(dbConfigCtl)
+	err = builder.ControllerManagedBy(mgr).For(&dbconfigv1alpha1.DbConfig{}).Complete(dbConfigCtl)
+
+	dbConfigCtl.Logger = mgr.GetLogger()
 
 	// 4. 载入业务配置
 	if err = sysconfig.InitConfig(); err != nil {

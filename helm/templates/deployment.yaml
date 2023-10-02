@@ -25,7 +25,7 @@ spec:
             - name: "Release"
               value: "1"
           workingDir: "/app"
-          command: [ "./myinspectoperator" ]
+          command: [ "./mydbconfigoperator" ]
           {{- if .Values.service.ports }}
           ports:
             {{- range .Values.service.ports }}

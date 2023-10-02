@@ -17,12 +17,13 @@ spec:
       serviceAccountName: mydbconfig-sa # 配置service account
       containers:
         # 容器启动顺序应该在代码层面保证
-        - name: mysqltest  # 数据库镜像
-          image: mysql:5.7
+        - name: mysqltest
+          image: mariadb:10.5 # 数据库镜像使用 mariadb10.5
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3306
           env:
+            # mysql root 用户密码默认使用 123456
             - name: MYSQL_ROOT_PASSWORD
               value: "123456"
         - name: mydbconfig # 控制器镜像
@@ -51,6 +52,7 @@ metadata:
 spec:
   type: NodePort
   ports:
+    # 暴露给其他服务也能连接此数据库 ex: 10.0.0.16:30110
     - port: 3306
       nodePort: 30110
   selector:

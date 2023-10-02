@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbconfig-service1-configmap
+  namespace: default
+data:
+  # 下面填写创建 mysql 表的 sql 语句
+  runoob.table: |
+    CREATE TABLE IF NOT EXISTS runoob_tbl(
+    runoob_id INT UNSIGNED AUTO_INCREMENT,
+    runoob_title VARCHAR(100) NOT NULL,
+    runoob_author VARCHAR(40) NOT NULL,
+    submission_date DATE,
+    PRIMARY KEY ( runoob_id )
+    )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  test.table: |
+    CREATE TABLE IF NOT EXISTS runoob_tbl1(
+    runoob_id INT UNSIGNED AUTO_INCREMENT,
+    runoob_title VARCHAR(100) NOT NULL,
+    runoob_author VARCHAR(40) NOT NULL,
+    submission_date DATE,
+    PRIMARY KEY ( runoob_id )
+    )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbconfig-service1-secret
+data:
+  # 在创建 secret 对象时，data 字段需要用 "base64" 编码
+  # 这是base64后的结果，k8s会自动从base64转回来
+  # 所以连接数据库时，只需要填写原密码就行。
+  PASSWORD: "ZGJjb25maWctc2VydmljZTEtc2VjcmV0" # 原密码: dbconfig-service1-secret

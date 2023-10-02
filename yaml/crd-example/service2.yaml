@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbconfig-service2-configmap
+  namespace: default
+data:
+  # 下面填写创建 mysql 表的 sql 语句
+  products.table: |
+    CREATE TABLE IF NOT EXISTS products (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(100) NOT NULL,
+      price DECIMAL(10, 2) NOT NULL,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  shipments.table: |
+    CREATE TABLE IF NOT EXISTS shipments (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      product_id INT,
+      quantity INT,
+      shipment_date DATE,
+      destination VARCHAR(100)
+    );
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbconfig-service2-secret
+data:
+  # 在创建 secret 对象时，data 字段需要用 "base64" 编码
+  # 这是base64后的结果，k8s会自动从base64转回来
+  # 所以连接数据库时，只需要填写原密码就行。
+  PASSWORD: "ZGJjb25maWctc2VydmljZTItc2VjcmV0" # 原密码: dbconfig-service2-secret

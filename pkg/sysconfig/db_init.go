@@ -4,16 +4,20 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"k8s.io/klog/v2"
+	"time"
 )
 
 // InitDB 初始化db数据库
-func InitDB(dsn string) (*sql.DB, error) {
+func InitDB(cfg *SysConfig) (*sql.DB, error) {
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", cfg.Dsn)
 	if err != nil {
 		klog.Error("open mysql error: ", err)
 		return nil, err
 	}
+	db.SetMaxIdleConns(cfg.MaxIdleConn)
+	db.SetMaxOpenConns(cfg.MaxOpenConn)
+	db.SetConnMaxLifetime(30 * time.Second)
 
 	return db, nil
 }
@@ -26,7 +30,7 @@ func CheckOrCreateDb(db *sql.DB, dbname string) {
 	}
 }
 
-// CreateTables 创建表结构
+// CreateTable 创建Tables
 func CreateTable(db *sql.DB, dbname string, tableInfo string) {
 
 	_, err := db.Exec("USE " + dbname)
@@ -40,7 +44,7 @@ func CreateTable(db *sql.DB, dbname string, tableInfo string) {
 	}
 }
 
-// DeleteDB 删除db
+// DeleteDBs 删除db
 func DeleteDBs(db *sql.DB, dbnames []string) {
 
 	if len(dbnames) == 0 {
@@ -55,12 +59,12 @@ func DeleteDBs(db *sql.DB, dbnames []string) {
 	}
 }
 
-// CheckTableIsExists
+// CheckTableIsExists 检查是否存在表
 func CheckTableIsExists(db *sql.DB, dbName string, tableName string) (bool, error) {
 
 	_, err := db.Exec("USE " + dbName)
 	if err != nil {
-		return false,err
+		return false, err
 	}
 
 	rows, err := db.Query("SHOW TABLES")

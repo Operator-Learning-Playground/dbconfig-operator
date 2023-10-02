@@ -2,8 +2,11 @@ package controller
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
 	"github.com/myoperator/dbconfigoperator/pkg/sysconfig"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -11,6 +14,7 @@ import (
 
 type DbConfigController struct {
 	client.Client
+	logr.Logger
 }
 
 func NewDbConfigController() *DbConfigController {
@@ -30,19 +34,21 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		// 如果未找到的错误，不再进入调协
 		return reconcile.Result{}, nil
 	}
+
 	klog.Info(dbconfig)
 
-	//
+	// 整理出需要被删除的 db or user
 	needToDeleteDb, needToDeleteUser := sysconfig.CompareNeedToDelete(dbconfig, sysconfig.SysConfig1)
-	klog.Info("delete db: ", needToDeleteDb, "delete user: ", needToDeleteUser)
+	klog.Info("delete db: ", needToDeleteDb, ", delete user: ", needToDeleteUser)
 	// 配置文件更新
 	err = sysconfig.AppConfig(dbconfig)
 	if err != nil {
+		klog.Error("app config error: ", err)
 		return reconcile.Result{}, nil
 	}
 
-	// 更新db的库与表结构
-	db, err := sysconfig.InitDB(sysconfig.SysConfig1.Dsn)
+	// 更新 db 的库与表结构
+	db, err := sysconfig.InitDB(sysconfig.SysConfig1)
 	if err != nil {
 		klog.Error("init db error: ", err)
 		return reconcile.Result{}, err
@@ -54,17 +60,16 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	for _, service := range sysconfig.SysConfig1.Services {
 		// 没设置就跳过
 		if service.Service.Tables == "" || service.Service.Dbname == "" {
-			klog.Warning("this loop no dbname or tables.")
+			klog.Warningf("this loop [%s] no dbname or tables.", service.Service.Dbname)
 			continue
 		}
 		// 1. 创建库与表
-		klog.Info(service.Service.Tables, req.Namespace)
-		tableList, err := sysconfig.GetConfigmapData(service.Service.Tables, req.Namespace)
+		tableList, err := r.GetConfigmapData(service.Service.Tables, req.Namespace)
 		if err != nil {
 			klog.Error("get configmap data error: ", err)
 			return reconcile.Result{}, nil
 		}
-		klog.Info(tableList)
+		klog.Info("table list: ", tableList)
 		// 检查表是否创建，没有则创建
 		sysconfig.CheckOrCreateDb(db, service.Service.Dbname)
 
@@ -77,14 +82,13 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			}
 		}
 
-
 		// 没设置就跳过
 		if service.Service.User == "" || service.Service.Password == "" {
 			klog.Warning("this loop no user or password.")
 			continue
 		}
 		// 2. 创建用户
-		password, err := sysconfig.GetSecretData(service.Service.Password, req.Namespace)
+		password, err := r.GetSecretData(service.Service.Password, req.Namespace)
 		if err != nil {
 			klog.Error("get secret data error: ", err)
 			return reconcile.Result{}, nil
@@ -93,13 +97,43 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		sysconfig.CreateUser(db, service.Service.User, password, service.Service.Dbname)
 	}
 
+	klog.Info("successful reconcile")
+
 	return reconcile.Result{}, nil
 }
 
-// InjectClient 使用controller-runtime 需要注入的client
+// InjectClient 使用 controller-runtime 需要注入的 client
 func (r *DbConfigController) InjectClient(c client.Client) error {
 	r.Client = c
 	return nil
 }
 
-// TODO: 删除逻辑并未处理
+// GetConfigmapData 取得用户自定义的configmap data字段
+func (r *DbConfigController) GetConfigmapData(name string, namespace string) ([]string, error) {
+	res := make([]string, 0)
+	cm := &corev1.ConfigMap{}
+	err := r.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, cm)
+	if err != nil {
+		klog.Error("get configmap error: ", err)
+		return res, err
+	}
+	for _, v := range cm.Data {
+		res = append(res, v)
+	}
+	return res, nil
+}
+
+const secretKey = "PASSWORD"
+
+func (r *DbConfigController) GetSecretData(name string, namespace string) (string, error) {
+	var res string
+	secret := &corev1.Secret{}
+	err := r.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, secret)
+	if err != nil {
+		klog.Error("get secret error: ", err)
+		return res, err
+	}
+
+	res = string(secret.Data[secretKey])
+	return res, nil
+}

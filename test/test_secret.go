@@ -17,7 +17,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/")
+	db, err := sql.Open("mysql", "root:1234567@tcp(127.0.0.1:3306)/")
 	if err != nil {
 		panic(err)
 	}
@@ -34,6 +34,8 @@ func main() {
 	}
 
 	for k, v := range sr.Data {
+		//  虽然 kubectl apply -f secret.yaml 里面 data 字段需要的是 base64 编码
+		// 但是使用 client-go 取出时，还是取到明文，所以创建用户直接取明文即可
 		fmt.Println("key: ", k)
 		fmt.Println("value: ", string(v))
 
