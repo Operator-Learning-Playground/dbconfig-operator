@@ -21,6 +21,8 @@ user 的 operator 应用。
 [root@VM-0-16-centos dbconfigoperator]# pwd
 /root/dbconfigoperator
 # 下列命令会得到一个二进制文件，服务启动时需要使用。
+# 可以直接使用 docker 镜像部署
+# docker build -t dbconfigoperator:v1 .
 [root@VM-0-16-centos dbconfigoperator]# docker run --rm -it -v /root/dbconfigoperator:/app -w /app -e GOPROXY=https://goproxy.cn -e CGO_ENABLED=0  golang:1.18.7-alpine3.15 go build -o ./mydbconfigoperator .
 [root@VM-0-16-centos dbconfigoperator]# ls | grep mydbconfigoperator
  mydbconfigoperator # 可以看到这就是需要用的二进制文件

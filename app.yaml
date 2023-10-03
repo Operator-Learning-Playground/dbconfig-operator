@@ -1,6 +1,6 @@
 Dsn: root:1234567@tcp(127.0.0.1:3306)/
 MaxIdleConn: 11
-MaxOpenConn: 51
+MaxOpenConn: 100
 Services:
 - Service:
     Dbname: dbconfig_service1

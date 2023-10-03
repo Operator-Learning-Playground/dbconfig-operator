@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -37,6 +38,55 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 
 	klog.Info(dbconfig)
 
+	// 更新 db 的库与表结构
+	db, err := sysconfig.InitDB(sysconfig.SysConfig1)
+	if err != nil {
+		klog.Error("init db error: ", err)
+		return reconcile.Result{}, err
+	}
+
+	// 2. 是否是删除流程
+	if !dbconfig.DeletionTimestamp.IsZero() {
+
+		// 删除资源对象
+		allToDeleteDb := make([]string, 0)
+		allToDeleteUser := make([]string, 0)
+		for _, v := range dbconfig.Spec.Services {
+			allToDeleteDb = append(allToDeleteDb, v.Service.Dbname)
+			allToDeleteUser = append(allToDeleteUser, v.Service.User)
+		}
+		sysconfig.DeleteDBs(db, allToDeleteDb)
+		sysconfig.DeleteUsers(db, allToDeleteUser)
+
+		// 清空配置文件
+		klog.Info("clean dbconfig config")
+		err := sysconfig.CleanConfig()
+		if err != nil {
+			klog.Error("clean dbconfig config error: ", err)
+			return reconcile.Result{}, err
+		}
+
+		// 清理完成后，从 Finalizers 中移除 Finalizer
+		controllerutil.RemoveFinalizer(dbconfig, finalizerName)
+		err = r.Update(ctx, dbconfig)
+		if err != nil {
+			klog.Error("clean dbconfig finalizer err: ", err)
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
+	// 3. 检查是否已添加 Finalizer
+	if !containsFinalizer(dbconfig) {
+		// 添加 Finalizer
+		controllerutil.AddFinalizer(dbconfig, finalizerName)
+		err = r.Update(ctx, dbconfig)
+		if err != nil {
+			klog.Error("update dbconfig finalizer err: ", err)
+			return reconcile.Result{}, err
+		}
+	}
+
 	// 整理出需要被删除的 db or user
 	needToDeleteDb, needToDeleteUser := sysconfig.CompareNeedToDelete(dbconfig, sysconfig.SysConfig1)
 	klog.Info("delete db: ", needToDeleteDb, ", delete user: ", needToDeleteUser)
@@ -47,12 +97,6 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	// 更新 db 的库与表结构
-	db, err := sysconfig.InitDB(sysconfig.SysConfig1)
-	if err != nil {
-		klog.Error("init db error: ", err)
-		return reconcile.Result{}, err
-	}
 	// db、user删除操作
 	sysconfig.DeleteDBs(db, needToDeleteDb)
 	sysconfig.DeleteUsers(db, needToDeleteUser)
@@ -136,4 +180,17 @@ func (r *DbConfigController) GetSecretData(name string, namespace string) (strin
 
 	res = string(secret.Data[secretKey])
 	return res, nil
+}
+
+const (
+	finalizerName = "api.practice.com/finalizer"
+)
+
+func containsFinalizer(dbconfig *dbconfigv1alpha1.DbConfig) bool {
+	for _, finalizer := range dbconfig.Finalizers {
+		if finalizer == finalizerName {
+			return true
+		}
+	}
+	return false
 }

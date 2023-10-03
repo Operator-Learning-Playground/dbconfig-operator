@@ -29,6 +29,18 @@ type Services struct {
 	Service Service `yaml:"service"`
 }
 
+func CleanConfig() error {
+
+	// 1. 把SysConfig1中的都删除
+	// 清零后需要先更新app.yaml文件
+	SysConfig1.Services = make([]Services, 0)
+	if err := saveConfigToFile(); err != nil {
+		return err
+	}
+
+	return ReloadConfig()
+}
+
 // AppConfig 刷新配置文件
 func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig) error {
 
