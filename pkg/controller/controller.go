@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-logr/logr"
 	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
+	"github.com/myoperator/dbconfigoperator/pkg/db"
 	"github.com/myoperator/dbconfigoperator/pkg/sysconfig"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,7 +40,8 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	klog.Info(dbconfig)
 
 	// 更新 db 的库与表结构
-	db, err := sysconfig.InitDB(sysconfig.SysConfig1)
+	// 目前只是全局一个配置文件 config, 所以目前调协循环时只读取此实例
+	globalDB, err := db.InitDB(sysconfig.SysConfig1)
 	if err != nil {
 		klog.Error("init db error: ", err)
 		return reconcile.Result{}, err
@@ -55,8 +57,9 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			allToDeleteDb = append(allToDeleteDb, v.Service.Dbname)
 			allToDeleteUser = append(allToDeleteUser, v.Service.User)
 		}
-		sysconfig.DeleteDBs(db, allToDeleteDb)
-		sysconfig.DeleteUsers(db, allToDeleteUser)
+
+		globalDB.DeleteDBs(allToDeleteDb)
+		globalDB.DeleteUsers(allToDeleteUser)
 
 		// 清空配置文件
 		klog.Info("clean dbconfig config")
@@ -97,9 +100,9 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	// db、user删除操作
-	sysconfig.DeleteDBs(db, needToDeleteDb)
-	sysconfig.DeleteUsers(db, needToDeleteUser)
+	// db、user 删除操作
+	globalDB.DeleteDBs(needToDeleteDb)
+	globalDB.DeleteUsers(needToDeleteUser)
 	// 创建操作
 	for _, service := range sysconfig.SysConfig1.Services {
 		// 没设置就跳过
@@ -115,14 +118,14 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		}
 		klog.Info("table list: ", tableList)
 		// 检查表是否创建，没有则创建
-		sysconfig.CheckOrCreateDb(db, service.Service.Dbname)
+		globalDB.CheckOrCreateDb(service.Service.Dbname)
 
 		for _, tableInfo := range tableList {
 			// 检查表是否已经存在
-			isExist, err := sysconfig.CheckTableIsExists(db, service.Service.Dbname, tableInfo)
+			isExist, err := globalDB.CheckTableIsExists(service.Service.Dbname, tableInfo)
 			// 当(不存在与没报错)或是重建选项时，才建表
 			if (!isExist && err == nil) || service.Service.ReBuild {
-				sysconfig.CreateTable(db, service.Service.Dbname, tableInfo)
+				globalDB.CreateTable(service.Service.Dbname, tableInfo)
 			}
 		}
 
@@ -138,7 +141,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			return reconcile.Result{}, nil
 		}
 		klog.Info("password: ", password)
-		sysconfig.CreateUser(db, service.Service.User, password, service.Service.Dbname)
+		globalDB.CreateUser(service.Service.User, password, service.Service.Dbname)
 	}
 
 	klog.Info("successful reconcile")

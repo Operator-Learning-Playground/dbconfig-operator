@@ -13,7 +13,6 @@ func main() {
 
 	client := k8sconfig.InitClient(k8sconfig.K8sRestConfig())
 	cm, _ := client.CoreV1().ConfigMaps("default").Get(context.Background(), "multi-cluster-k8s", v1.GetOptions{})
-
 	// 连接数据库
 	db, err := sql.Open("mysql", "root:1234567@tcp(127.0.0.1:3306)/")
 	if err != nil {

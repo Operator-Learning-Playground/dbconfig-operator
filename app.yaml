@@ -5,18 +5,18 @@ Services:
 - Service:
     Dbname: dbconfig_service1
     Password: dbconfig-service1-secret
+    ReBuild: true
     Tables: dbconfig-service1-configmap
     User: dbconfig_service1
-    rebuild: true
 - Service:
     Dbname: dbconfig_service2
     Password: dbconfig-service2-secret
+    ReBuild: true
     Tables: dbconfig-service2-configmap
     User: dbconfig_service2
-    rebuild: true
 - Service:
     Dbname: dbconfig_service3
     Password: dbconfig-service3-secret
+    ReBuild: false
     Tables: dbconfig-service3-configmap
     User: dbconfig_service3
-    rebuild: false

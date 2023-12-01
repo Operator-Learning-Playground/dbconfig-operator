@@ -22,7 +22,7 @@ type Service struct {
 	Tables   string `yaml:"tables"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
-	ReBuild  bool   `json:"rebuild"`
+	ReBuild  bool   `yaml:"rebuild"`
 }
 
 type Services struct {
