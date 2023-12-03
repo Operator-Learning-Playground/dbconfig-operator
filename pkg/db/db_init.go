@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/myoperator/dbconfigoperator/pkg/sysconfig"
+	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
 	"k8s.io/klog/v2"
 	"time"
 )
@@ -25,15 +25,15 @@ func init() {
 // TODO: 抽象出 db 结构体，让 func 变成 struct 的方法
 
 // InitDB 初始化db数据库
-func InitDB(cfg *sysconfig.SysConfig) (*GlobalDB, error) {
+func InitDB(dbconfig *dbconfigv1alpha1.DbConfig) (*GlobalDB, error) {
 
-	db, err := sql.Open("mysql", cfg.Dsn)
+	db, err := sql.Open("mysql", dbconfig.Spec.Dsn)
 	if err != nil {
 		klog.Error("open mysql error: ", err)
 		return nil, err
 	}
-	db.SetMaxIdleConns(cfg.MaxIdleConn)
-	db.SetMaxOpenConns(cfg.MaxOpenConn)
+	db.SetMaxIdleConns(dbconfig.Spec.MaxIdleConn)
+	db.SetMaxOpenConns(dbconfig.Spec.MaxOpenConn)
 	db.SetConnMaxLifetime(30 * time.Second)
 
 	InitGlobalDB.DB = db

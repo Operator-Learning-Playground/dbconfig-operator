@@ -4,7 +4,6 @@ import (
 	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
 	"github.com/myoperator/dbconfigoperator/pkg/controller"
 	"github.com/myoperator/dbconfigoperator/pkg/k8sconfig"
-	"github.com/myoperator/dbconfigoperator/pkg/sysconfig"
 	_ "k8s.io/code-generator"
 	"k8s.io/klog/v2"
 	"log"
@@ -46,17 +45,10 @@ func main() {
 	}
 
 	// 3. 控制器相关
-	dbConfigCtl := controller.NewDbConfigController()
+	dbConfigCtl := controller.NewDbConfigController(mgr.GetClient(), mgr.GetLogger())
 
 	err = builder.ControllerManagedBy(mgr).For(&dbconfigv1alpha1.DbConfig{}).Complete(dbConfigCtl)
 
-	dbConfigCtl.Logger = mgr.GetLogger()
-
-	// 4. 载入业务配置
-	if err = sysconfig.InitConfig(); err != nil {
-		klog.Error(err, "unable to load sysconfig")
-		os.Exit(1)
-	}
 	errC := make(chan error)
 
 	// 5. 启动controller管理器
