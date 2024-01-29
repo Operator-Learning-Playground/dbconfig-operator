@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbconfig-cm-for-multi-cluster-operator
+  namespace: default
+data:
+  # 下面填写创建 mysql 表的 sql 语句
+  clusters.table: |
+    DROP TABLE IF EXISTS `clusters`;
+    CREATE TABLE IF NOT EXISTS clusters  (
+      id bigint(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+      name varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      isMaster varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      status varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      create_at timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id) USING BTREE,
+      UNIQUE INDEX name(name) USING BTREE
+    ) ENGINE = MyISAM AUTO_INCREMENT = 0 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+  resources.table: |
+    DROP TABLE IF EXISTS `resources`;
+    CREATE TABLE IF NOT EXISTS `resources`  (
+      `id` bigint(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+      `namespace` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
+      `name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `cluster` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `group` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `version` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `resource` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `kind` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `resource_version` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
+      `owner` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'owner uid',
+      `uid` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+      `hash` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
+      `object` json NULL,
+      `create_at` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `delete_at` timestamp(0) NULL DEFAULT NULL,
+      `update_at` timestamp(0) NULL DEFAULT NULL,
+      PRIMARY KEY (`id`) USING BTREE,
+      UNIQUE INDEX `uid`(`uid`) USING BTREE
+    ) ENGINE = MyISAM AUTO_INCREMENT = 0 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbconfig-secret-for-multi-cluster-operator
+data:
+  # 在创建 secret 对象时，data 字段需要用 "base64" 编码
+  # 这是base64后的结果，k8s会自动从base64转回来
+  # 所以连接数据库时，只需要填写原密码就行。
+  PASSWORD: MTIzNDU2 # 原密码: 123456
+
+---
+apiVersion: api.practice.com/v1alpha1
+kind: DbConfig
+metadata:
+  name: dbconfig-for-multi-cluster-operator
+spec:
+  dsn: root:123456@tcp(127.0.0.1:3306)/               # db 连接的 <user>:<password>@tcp(<ip:port>)/
+  maxIdleConn: 15                                      # 最大空闲连接数，可不填，默认为 10
+  maxOpenConn: 100                                     # 最大连接数，可不填，默认为 100
+  services:
+    - service:
+        user: multi_cluster_operator                    # 用户名
+        password_secret: dbconfig-secret-for-multi-cluster-operator      # secret 名，设置 db 用户的密码，用户需要先创建 secret 资源，并在此指定
+        dbname: resources                  # db 名
+        tables_configmap: dbconfig-cm-for-multi-cluster-operator  # configmap 名，设置创建表，用户需要先创建 configmap 资源，并在此指定
+
+

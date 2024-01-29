@@ -31,7 +31,6 @@ spec:
           env:
             - name: "Release"
               value: "1"
-          workingDir: "/app"
           command: ["./mydbconfigoperator"]
           ports:
             - containerPort: 80

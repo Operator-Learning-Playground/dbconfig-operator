@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
 	"k8s.io/klog/v2"
+	"strings"
 	"time"
 )
 
@@ -57,10 +58,19 @@ func (gb *GlobalDB) CreateTable(dbname string, tableInfo string) {
 		klog.Error("use databases error: ", err)
 	}
 
-	_, err = gb.DB.Exec(tableInfo)
-	if err != nil {
-		klog.Error("database: ", dbname, ", create tables error: ", err)
+	// 把填入的 cmd 切分 ";" 来分开执行
+	cmdList := strings.Split(tableInfo, ";")
+	for _, cmd := range cmdList {
+		if cmd == "\n" {
+			klog.Warningf("create database ")
+			continue
+		}
+		_, err = gb.DB.Exec(cmd)
+		if err != nil {
+			klog.Error("database: ", dbname, ", create tables error: ", err)
+		}
 	}
+
 }
 
 // DeleteDBs 删除传入的 db 库

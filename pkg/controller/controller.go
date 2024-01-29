@@ -19,6 +19,7 @@ import (
 )
 
 type DbConfigController struct {
+	// 加入事件通知器
 	client client.Client
 	log    logr.Logger
 }

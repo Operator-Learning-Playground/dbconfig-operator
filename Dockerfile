@@ -20,6 +20,7 @@ RUN go mod download
 COPY main.go main.go
 COPY pkg/ pkg/
 COPY app.yaml app.yaml
+COPY global_config/ global_config/
 RUN chmod 777 ./app.yaml
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o mydbconfigoperator main.go
@@ -28,9 +29,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o mydbconfigoperator main
 FROM alpine:3.12
 WORKDIR /app
 # 需要的文件需要复制过来
-COPY --from=builder /app/mydbconfigoperator .
-COPY --from=builder /app/app.yaml .
+USER root
+
+COPY --from=builder --chown=root:root /app/mydbconfigoperator .
+COPY --from=builder --chown=root:root /app/app.yaml .
+COPY --from=builder --chown=root:root /app/global_config global_config/
 RUN chmod 777 /app/app.yaml
-USER 65532:65532
+RUN chmod 777 global_config/
 
 ENTRYPOINT ["./mydbconfigoperator"]

@@ -3,7 +3,7 @@ kind: DbConfig
 metadata:
   name: mydbconfig-3
 spec:
-  dsn: root:1234567@tcp(127.0.0.1:3306)/               # db 连接的 <user>:<password>@tcp(<ip:port>)/
+  dsn: root:123456@tcp(127.0.0.1:3306)/               # db 连接的 <user>:<password>@tcp(<ip:port>)/
   maxIdleConn: 10                                      # 最大空闲连接数，可不填，默认为 10
   maxOpenConn: 120                                     # 最大连接数，可不填，默认为 100
   services:
