@@ -110,29 +110,30 @@ dbconfig-service3-secret   Opaque   1      20m
 apiVersion: api.practice.com/v1alpha1
 kind: DbConfig
 metadata:
-  name: mydbconfig
+  name: mydbconfig-2
 spec:
-  dsn: root:1234567@tcp(127.0.0.1:3306)/               # db 连接的 <user>:<password>@tcp(<ip:port>)/
-  maxIdleConn: 11                                      # 最大空闲连接数，可不填，默认为 10
+  dsn: root:123456@tcp(127.0.0.1:3306)/                # db 连接的 <user>:<password>@tcp(<ip:port>)/
+  maxIdleConn: 15                                      # 最大空闲连接数，可不填，默认为 10
   maxOpenConn: 100                                     # 最大连接数，可不填，默认为 100
   services:
-    - service:
-        user: dbconfig_service1                        # 用户名
-        password_secret: dbconfig-service1-secret      # secret 名，设置 db 用户的密码，用户需要先创建 secret 资源，并在此指定
-        dbname: dbconfig_service1                      # db 名
-        tables_configmap: dbconfig-service1-configmap  # configmap 名，设置创建表，用户需要先创建 configmap 资源，并在此指定
-        rebuild: true                                  # rebuild 字段 可以在 db 中已经创建完成后，需要重新创建时使用, ex: 表新增字段
-    - service:
-        user: dbconfig_service2
-        password_secret: dbconfig-service2-secret
-        dbname: dbconfig_service2
-        tables_configmap: dbconfig-service2-configmap
-        rebuild: true
-    - service:
-        user: dbconfig_service3
-        password_secret: dbconfig-service3-secret
-        dbname: dbconfig_service3
-        tables_configmap: dbconfig-service3-configmap
+    - user: dbconfig_servicetest1                      # 用户名
+      password:
+        secretRef: dbconfig-service1-secret            # secret 名，设置 db 用户的密码，用户需要先创建 secret 资源，并在此指定
+      dbname: dbconfig_servicetest1                    # db 名
+      tables:
+        configMapRef: dbconfig-service1-configmap      # configmap 名，设置创建表，用户需要先创建 configmap 资源，并在此指定
+    - user: dbconfig_service22test
+      password:
+        secretRef: dbconfig-service2-secret
+      dbname: dbconfig_service22test
+      tables:
+        configMapRef: dbconfig-service2-configmap
+    - user: dbconfig_service33tttt
+      password:
+        secretRef: dbconfig-service3-secret
+      dbname: dbconfig_service33tttt
+      tables:
+        configMapRef: dbconfig-service3-configmap
 ```
 7. 可以 **exec** 或 **logs** 查看结果
 

@@ -7,10 +7,10 @@ import (
 var SysConfig1 = new(SysConfig)
 
 type SysConfig struct {
-	Dsn         string     `yaml:"dsn"`
-	MaxIdleConn int        `yaml:"maxIdleConn"`
-	MaxOpenConn int        `yaml:"maxOpenConn"`
-	Services    []Services `yaml:"services"`
+	Dsn         string    `yaml:"dsn"`
+	MaxIdleConn int       `yaml:"maxIdleConn"`
+	MaxOpenConn int       `yaml:"maxOpenConn"`
+	Services    []Service `yaml:"services"`
 }
 
 type Service struct {
@@ -21,9 +21,9 @@ type Service struct {
 	ReBuild  bool   `yaml:"rebuild"`
 }
 
-type Services struct {
-	Service Service `yaml:"service"`
-}
+//type Services struct {
+//	Service Service `yaml:"service"`
+//}
 
 /*
 	NOTE: 上一版使用 app.yaml 全局配置文件来管理 cr 的配置，
@@ -126,34 +126,33 @@ func CompareNeedToDelete(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConf
 
 	// 挑出需要删除的资源
 	for _, v := range sysconfig.Services {
-		isDb := searchDbNotInList(v.Service.Dbname, dbconfig.Spec.Services)
-		isUser := searchUserNotInList(v.Service.User, dbconfig.Spec.Services)
+		isDb := searchDbNotInList(v.Dbname, dbconfig.Spec.Services)
+		isUser := searchUserNotInList(v.User, dbconfig.Spec.Services)
 		if isDb {
-			needDeleteDb = append(needDeleteDb, v.Service.Dbname)
+			needDeleteDb = append(needDeleteDb, v.Dbname)
 		}
 		if isUser {
-			needDeleteUser = append(needDeleteUser, v.Service.User)
+			needDeleteUser = append(needDeleteUser, v.User)
 		}
 	}
 
 	return needDeleteDb, needDeleteUser
-
 }
 
 // searchDbNotInList 比较 dbconfig 中是否有此 dbname，
 // 如果没有代表需要在 app.yaml 中挑出来，准备删除的 dbname
-func searchDbNotInList(target string, services []dbconfigv1alpha1.Services) bool {
+func searchDbNotInList(target string, services []dbconfigv1alpha1.Service) bool {
 	for _, v := range services {
-		if v.Service.Dbname == target {
+		if v.Dbname == target {
 			return false
 		}
 	}
 	return true
 }
 
-func searchUserNotInList(target string, services []dbconfigv1alpha1.Services) bool {
+func searchUserNotInList(target string, services []dbconfigv1alpha1.Service) bool {
 	for _, v := range services {
-		if v.Service.User == target {
+		if v.User == target {
 			return false
 		}
 	}

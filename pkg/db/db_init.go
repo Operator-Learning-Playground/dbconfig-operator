@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	dbconfigv1alpha1 "github.com/myoperator/dbconfigoperator/pkg/apis/dbconfig/v1alpha1"
 	"k8s.io/klog/v2"
@@ -81,6 +82,7 @@ func (gb *GlobalDB) DeleteDBs(dbnames []string) {
 		return
 	}
 	for _, dbname := range dbnames {
+		fmt.Println("dbname: ", dbname)
 		_, err := gb.DB.Exec("DROP DATABASE IF EXISTS " + dbname)
 		if err != nil {
 			klog.Error("drop databases error: ", err)

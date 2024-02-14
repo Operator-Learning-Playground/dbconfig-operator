@@ -25,7 +25,7 @@ func CleanConfig(sysconfig *SysConfig, fileName string) error {
 
 	// 1. 把SysConfig1中的都删除
 	// 清零后需要先更新app.yaml文件
-	sysconfig.Services = make([]Services, 0)
+	sysconfig.Services = make([]Service, 0)
 	sysconfig.Dsn = ""
 	sysconfig.MaxOpenConn = 0
 	sysconfig.MaxIdleConn = 0
@@ -74,7 +74,7 @@ func CreateAppConfig(dbconfig *dbconfigv1alpha1.DbConfig, fileName string) error
 
 	// 比较当前db有的 user 与 dbname
 	sysconfig := &SysConfig{
-		Services: make([]Services, len(dbconfig.Spec.Services)),
+		Services: make([]Service, len(dbconfig.Spec.Services)),
 	}
 
 	// 2. 更新内存的配置
@@ -82,11 +82,11 @@ func CreateAppConfig(dbconfig *dbconfigv1alpha1.DbConfig, fileName string) error
 	sysconfig.MaxIdleConn = dbconfig.Spec.MaxIdleConn
 	sysconfig.MaxOpenConn = dbconfig.Spec.MaxOpenConn
 	for i, service := range dbconfig.Spec.Services {
-		sysconfig.Services[i].Service.Dbname = service.Service.Dbname
-		sysconfig.Services[i].Service.Tables = service.Service.Tables
-		sysconfig.Services[i].Service.User = service.Service.User
-		sysconfig.Services[i].Service.Password = service.Service.Password
-		sysconfig.Services[i].Service.ReBuild = service.Service.ReBuild
+		sysconfig.Services[i].Dbname = service.Dbname
+		sysconfig.Services[i].Tables = service.Tables.ConfigMapRef
+		sysconfig.Services[i].User = service.User
+		sysconfig.Services[i].Password = service.Password.SecretRef
+		sysconfig.Services[i].ReBuild = service.ReBuild
 	}
 
 	// 保存配置文件
@@ -103,7 +103,7 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConfig, fileNa
 
 	if sysconfig == nil {
 		sysconfig = &SysConfig{
-			Services: make([]Services, 0),
+			Services: make([]Service, 0),
 		}
 	}
 
@@ -112,7 +112,7 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConfig, fileNa
 	// 如果数量不同，直接全部重新赋值
 	if len(sysconfig.Services) != len(dbconfig.Spec.Services) {
 		// 清零后需要先更新 app.yaml 文件
-		sysconfig.Services = make([]Services, len(dbconfig.Spec.Services))
+		sysconfig.Services = make([]Service, len(dbconfig.Spec.Services))
 		if _, err := saveConfigToFile(sysconfig, fileName); err != nil {
 			return err
 		}
@@ -123,11 +123,11 @@ func AppConfig(dbconfig *dbconfigv1alpha1.DbConfig, sysconfig *SysConfig, fileNa
 	sysconfig.MaxIdleConn = dbconfig.Spec.MaxIdleConn
 	sysconfig.MaxOpenConn = dbconfig.Spec.MaxOpenConn
 	for i, service := range dbconfig.Spec.Services {
-		sysconfig.Services[i].Service.Dbname = service.Service.Dbname
-		sysconfig.Services[i].Service.Tables = service.Service.Tables
-		sysconfig.Services[i].Service.User = service.Service.User
-		sysconfig.Services[i].Service.Password = service.Service.Password
-		sysconfig.Services[i].Service.ReBuild = service.Service.ReBuild
+		sysconfig.Services[i].Dbname = service.Dbname
+		sysconfig.Services[i].Tables = service.Tables.ConfigMapRef
+		sysconfig.Services[i].User = service.User
+		sysconfig.Services[i].Password = service.Password.SecretRef
+		sysconfig.Services[i].ReBuild = service.ReBuild
 	}
 
 	// 保存配置文件

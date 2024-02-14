@@ -61,8 +61,10 @@ spec:
   services:
     - service:
         user: multi_cluster_operator                    # 用户名
-        password_secret: dbconfig-secret-for-multi-cluster-operator      # secret 名，设置 db 用户的密码，用户需要先创建 secret 资源，并在此指定
+        password:
+          secretRef: dbconfig-secret-for-multi-cluster-operator      # secret 名，设置 db 用户的密码，用户需要先创建 secret 资源，并在此指定
         dbname: resources                  # db 名
-        tables_configmap: dbconfig-cm-for-multi-cluster-operator  # configmap 名，设置创建表，用户需要先创建 configmap 资源，并在此指定
+        tables:
+          configMapRef: dbconfig-cm-for-multi-cluster-operator  # configmap 名，设置创建表，用户需要先创建 configmap 资源，并在此指定
 
 

@@ -73,7 +73,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 	} else {
-		// 获取原来的配置内容
+		// 如果文件存在，获取原来的配置内容
 		syscc, err = sysconfig.GetContentFromFile(fileName)
 		if err != nil {
 			klog.Error("get content from file error: ", err)
@@ -109,8 +109,8 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		allToDeleteDb := make([]string, 0)
 		allToDeleteUser := make([]string, 0)
 		for _, v := range dbconfig.Spec.Services {
-			allToDeleteDb = append(allToDeleteDb, v.Service.Dbname)
-			allToDeleteUser = append(allToDeleteUser, v.Service.User)
+			allToDeleteDb = append(allToDeleteDb, v.Dbname)
+			allToDeleteUser = append(allToDeleteUser, v.User)
 		}
 
 		globalDB.DeleteDBs(allToDeleteDb)
@@ -159,42 +159,42 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 	// 必须从获取到的配置文件中拿到 sysconfig 实例
 	for _, service := range dbconfig.Spec.Services {
 		// 没设置就跳过
-		if service.Service.Tables == "" || service.Service.Dbname == "" {
-			klog.Warningf("this loop [%s] no dbname or tables.", service.Service.Dbname)
+		if service.Tables.ConfigMapRef == "" || service.Dbname == "" {
+			klog.Warningf("this loop [%s] no dbname or tables.", service.Dbname)
 			continue
 		}
 		// 1. 创建库与表
-		tableList, err := r.GetConfigmapData(service.Service.Tables, req.Namespace)
+		tableList, err := r.GetConfigmapData(service.Tables.ConfigMapRef, req.Namespace)
 		if err != nil {
 			klog.Error("get configmap data error: ", err)
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 
 		// 检查表是否创建，没有则创建
-		globalDB.CheckOrCreateDb(service.Service.Dbname)
+		globalDB.CheckOrCreateDb(service.Dbname)
 
 		for _, tableInfo := range tableList {
 			// 检查表是否已经存在
-			isExist, err := globalDB.CheckTableIsExists(service.Service.Dbname, tableInfo)
+			isExist, err := globalDB.CheckTableIsExists(service.Dbname, tableInfo)
 			// 当(不存在与没报错)或是重建选项时，才建表
-			if (!isExist && err == nil) || service.Service.ReBuild {
-				globalDB.CreateTable(service.Service.Dbname, tableInfo)
+			if (!isExist && err == nil) || service.ReBuild {
+				globalDB.CreateTable(service.Dbname, tableInfo)
 			}
 		}
 
 		// 没设置就跳过
-		if service.Service.User == "" || service.Service.Password == "" {
+		if service.User == "" || service.Password.SecretRef == "" {
 			klog.Warning("this loop no user or password.")
 			continue
 		}
 		// 2. 创建用户
-		password, err := r.GetSecretData(service.Service.Password, req.Namespace)
+		password, err := r.GetSecretData(service.Password.SecretRef, req.Namespace)
 		if err != nil {
 			klog.Error("get secret data error: ", err)
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 		klog.Info("password: ", password)
-		globalDB.CreateUser(service.Service.User, password, service.Service.Dbname)
+		globalDB.CreateUser(service.User, password, service.Dbname)
 	}
 
 	klog.Info("successful reconcile")
