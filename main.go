@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// 3. 控制器相关
-	dbConfigCtl := controller.NewDbConfigController(mgr.GetClient(), mgr.GetLogger())
+	dbConfigCtl := controller.NewDbConfigController(mgr.GetClient(), mgr.GetLogger(), mgr.GetEventRecorderFor("dbconfig-event"))
 
 	err = builder.ControllerManagedBy(mgr).For(&dbconfigv1alpha1.DbConfig{}).Complete(dbConfigCtl)
 

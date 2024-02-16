@@ -10,6 +10,7 @@ import (
 	"github.com/myoperator/dbconfigoperator/pkg/sysconfig"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,12 +23,14 @@ type DbConfigController struct {
 	// 加入事件通知器
 	client client.Client
 	log    logr.Logger
+	event  record.EventRecorder
 }
 
-func NewDbConfigController(client client.Client, log logr.Logger) *DbConfigController {
+func NewDbConfigController(client client.Client, log logr.Logger, event record.EventRecorder) *DbConfigController {
 	return &DbConfigController{
 		client: client,
 		log:    log,
+		event:  event,
 	}
 }
 
@@ -123,12 +126,14 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		err := sysconfig.CleanConfig(syscc, fileName)
 		if err != nil {
 			klog.Error("clean dbconfig config error: ", err)
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "CleanConfigFailed", err.Error())
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 		// 删除配置文件
 		err = os.Remove(fileName)
 		if err != nil {
 			klog.Error("clean config error: ", err)
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "RemoveConfigFailed", err.Error())
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 
@@ -137,6 +142,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		err = r.client.Update(ctx, dbconfig)
 		if err != nil {
 			klog.Error("clean dbconfig finalizer err: ", err)
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "RemoveFinalizerFailed", err.Error())
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 
@@ -150,6 +156,7 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		controllerutil.AddFinalizer(dbconfig, finalizerName)
 		err = r.client.Update(ctx, dbconfig)
 		if err != nil {
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "AddFinalizerFailed", err.Error())
 			klog.Error("update dbconfig finalizer err: ", err)
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
@@ -161,11 +168,13 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 		// 没设置就跳过
 		if service.Tables.ConfigMapRef == "" || service.Dbname == "" {
 			klog.Warningf("this loop [%s] no dbname or tables.", service.Dbname)
+			r.event.Eventf(dbconfig, corev1.EventTypeNormal, "NoDBField", "configMapRef or Dbname field is nil")
 			continue
 		}
 		// 1. 创建库与表
-		tableList, err := r.GetConfigmapData(service.Tables.ConfigMapRef, req.Namespace)
+		tableList, err := r.GetConfigmapData(ctx, service.Tables.ConfigMapRef, req.Namespace)
 		if err != nil {
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "GetConfigmapDataFailed", err.Error())
 			klog.Error("get configmap data error: ", err)
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
@@ -178,23 +187,33 @@ func (r *DbConfigController) Reconcile(ctx context.Context, req reconcile.Reques
 			isExist, err := globalDB.CheckTableIsExists(service.Dbname, tableInfo)
 			// 当(不存在与没报错)或是重建选项时，才建表
 			if (!isExist && err == nil) || service.ReBuild {
-				globalDB.CreateTable(service.Dbname, tableInfo)
+				err := globalDB.CreateTable(service.Dbname, tableInfo)
+				if err != nil {
+					r.event.Eventf(dbconfig, corev1.EventTypeWarning, "CreateTableField",
+						fmt.Sprintf("Create db [%s] table error: ", service.Dbname))
+				}
 			}
 		}
 
 		// 没设置就跳过
 		if service.User == "" || service.Password.SecretRef == "" {
 			klog.Warning("this loop no user or password.")
+			r.event.Eventf(dbconfig, corev1.EventTypeNormal, "NoUserField", "secretRef or Username field is nil")
 			continue
 		}
 		// 2. 创建用户
-		password, err := r.GetSecretData(service.Password.SecretRef, req.Namespace)
+		password, err := r.GetSecretData(ctx, service.Password.SecretRef, req.Namespace)
 		if err != nil {
 			klog.Error("get secret data error: ", err)
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "GetSecretDataFailed", err.Error())
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 		}
 		klog.Info("password: ", password)
-		globalDB.CreateUser(service.User, password, service.Dbname)
+		err = globalDB.CreateUser(service.User, password, service.Dbname)
+		if err != nil {
+			r.event.Eventf(dbconfig, corev1.EventTypeWarning, "CreateUserField",
+				fmt.Sprintf("Create [%s] user, [%s] db, [%s] password error: ", service.User, service.Dbname, service.Password))
+		}
 	}
 
 	klog.Info("successful reconcile")
@@ -210,10 +229,10 @@ func (r *DbConfigController) InjectClient(c client.Client) error {
 }
 
 // GetConfigmapData 取得用户自定义的configmap data字段
-func (r *DbConfigController) GetConfigmapData(name string, namespace string) ([]string, error) {
+func (r *DbConfigController) GetConfigmapData(ctx context.Context, name string, namespace string) ([]string, error) {
 	res := make([]string, 0)
 	cm := &corev1.ConfigMap{}
-	err := r.client.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, cm)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, cm)
 	if err != nil {
 		klog.Error("get configmap error: ", err)
 		return res, err
@@ -224,10 +243,10 @@ func (r *DbConfigController) GetConfigmapData(name string, namespace string) ([]
 	return res, nil
 }
 
-func (r *DbConfigController) GetSecretData(name string, namespace string) (string, error) {
+func (r *DbConfigController) GetSecretData(ctx context.Context, name string, namespace string) (string, error) {
 	var res string
 	secret := &corev1.Secret{}
-	err := r.client.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, secret)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret)
 	if err != nil {
 		klog.Error("get secret error: ", err)
 		return res, err

@@ -52,11 +52,12 @@ func (gb *GlobalDB) CheckOrCreateDb(dbname string) {
 }
 
 // CreateTable 创建 Tables
-func (gb *GlobalDB) CreateTable(dbname string, tableInfo string) {
+func (gb *GlobalDB) CreateTable(dbname string, tableInfo string) error {
 
 	_, err := gb.DB.Exec("USE " + dbname)
 	if err != nil {
 		klog.Error("use databases error: ", err)
+		return err
 	}
 
 	// 把填入的 cmd 切分 ";" 来分开执行
@@ -69,9 +70,10 @@ func (gb *GlobalDB) CreateTable(dbname string, tableInfo string) {
 		_, err = gb.DB.Exec(cmd)
 		if err != nil {
 			klog.Error("database: ", dbname, ", create tables error: ", err)
+			return err
 		}
 	}
-
+	return nil
 }
 
 // DeleteDBs 删除传入的 db 库

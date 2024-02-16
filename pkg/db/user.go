@@ -6,7 +6,7 @@ import (
 )
 
 // CreateUser 创建 user
-func (gb *GlobalDB) CreateUser(user string, password string, dbname string) {
+func (gb *GlobalDB) CreateUser(user string, password string, dbname string) error {
 
 	// 创建user用户
 	key := fmt.Sprintf("CREATE USER IF NOT EXISTS "+user+" IDENTIFIED BY '%v';", password)
@@ -14,6 +14,7 @@ func (gb *GlobalDB) CreateUser(user string, password string, dbname string) {
 	klog.Info(key)
 	if err != nil {
 		klog.Error("create user error: ", err)
+		return err
 	}
 	// 授权
 	key1 := fmt.Sprintf("GRANT ALL PRIVILEGES ON "+dbname+".* TO "+"'%v'@'%%';", user)
@@ -21,7 +22,9 @@ func (gb *GlobalDB) CreateUser(user string, password string, dbname string) {
 	_, err = gb.DB.Exec(key1)
 	if err != nil {
 		klog.Error("set db privileges error: ", err)
+		return err
 	}
+	return nil
 }
 
 // DeleteUsers 删除 user
